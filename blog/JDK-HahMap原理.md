@@ -141,7 +141,7 @@ static final int hash(Object key) {
     //扰动函数
     return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
 }
-``` 
+```
 ![hashcode方法](https://user-images.githubusercontent.com/3156608/62001383-e5443380-b121-11e9-8d97-1f4ceacf0ec5.png)
 
 >扰动函数：右位移16位，正好是32bit的一半，自己的高半区和低半区做异或，就是为了`混合原始哈希码的高位和低位`，以此来加大低位的随机性。而且混合后的低位掺杂了高位的部分特征，这样高位的信息也被变相保留下来。
@@ -153,7 +153,7 @@ static final int hash(Object key) {
 (n - 1) & hash
 ```
 设计者认为这方法很容易发生碰撞。为什么这么说呢？不妨思考一下，在n - 1为15(`0000000000000000 0000000000001111`)时，其实散列真正生效的只是低4bit的有效位，当然容易碰撞了。
- 
+
 因此，设计者想了一个顾全大局的方法(综合考虑了`速度、作用、质量`)，就是把高16bit和低16bit进行异或运算。设计者还解释到因为现在大多数的hashCode的分布已经很不错了，就算是发生了碰撞也用`O(log_n)`的tree去做了。
 仅仅异或运算，既减少了系统的开销，也不会造成的因为高位没有参与下标的计算(table长度比较小时)，从而引起的碰撞。
 
@@ -397,7 +397,7 @@ HashMap存储着Entry(hash, key, value, next)对象。
 # 常见问题
 ## HashMap与Hashtable的区别
  Hashtable：Hashtable是遗留类，很多映射的常用功能与HashMap类似，不同的是它承自Dictionary类，并且是线程安全的，任一时间只有一个线程能写Hashtable，并发性不如ConcurrentHashMap，因为ConcurrentHashMap引入了分段锁。Hashtable不建议在新代码中使用，不需要线程安全的场合可以用HashMap替换，需要线程安全的场合可以用ConcurrentHashMap替换。
- 
+
 HashMap 实现了所有map类的方法。并允许使用 null 作为 key 和 value。
 HashMap和HashTable大致相同。 
 区别在于HashMap不是同步的，并允许null值，HashTable是同步，并且不允许null值。 
@@ -425,6 +425,7 @@ HashMap定位哈希桶索引位置时，也加入了`高位参与运算`的过�
 
 如果还是产生了频繁的碰撞，会发生什么问题呢？
 作者注释说，他们使用树来处理频繁的碰撞(we use trees to handle large sets of collisions in bins)，在JEP-180中，描述了这个问题：
+
 >Improve the performance of java.util.HashMap under `high hash-collision conditions` by using `balanced trees` rather than `linked lists` to store map entries. Implement the same improvement in the LinkedHashMap class.
 
 之前已经提过，在获取HashMap的元素时，基本分两步：
@@ -444,9 +445,20 @@ Java8，复杂度为`O(1)+O(log(backetSize))`
 * 存储对象时(`put`)，我们将K/V传给put方法，它调用hashCode计算hash从而得到bucket位置，进一步存储，HashMap会根据当前bucket的占用情况自动调整容量(超过Load Facotr则resize为原来的2倍)。
 * 获取对象时(`get`)，我们将K传给get方法，它调用hashCode计算hash从而得到bucket位置，并进一步调用equals()方法确定键值对。如果发生碰撞的时候，Hashmap通过链表将产生碰撞冲突的元素组织起来，在Java 8中，如果一个bucket中碰撞冲突的元素超过某个限制(默认是8)，则使用红黑树来替换链表，从而提高速度。
 
-## 你知道get和put的原理吗？equals()和hashCode()的都有什么作用？
+## 你知道get和put的原理吗？
+
+### get
+
 通过对key的hashCode()进行hashing，并计算下标`( n-1 & hash)`，从而获得buckets的位置。
 如果产生碰撞，则利用key.equals()方法去链表或树中去查找对应的节点
+
+### put
+
+
+
+## HashMap中的equals()和hashCode()的都有什么作用？
+
+
 
 ## 你知道hash的实现吗？为什么要这样实现？
 在Java 1.8的实现中，是通过hashCode()的高16位`异或`低16位实现的：`(h = k.hashCode()) ^ (h >>> 16)`，主要是从speed、utility、quality来考虑的，这么做可以在bucket的n比较小的时候，也能保证考虑到高低bit都参与到hash的计算中，同时不会有太大的开销。
