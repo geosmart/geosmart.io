@@ -11,12 +11,23 @@ categories: 大数据
 掌握一个数据库，需要从源头了解它，它是怎么设计的，这个设计是为了解决什么问题，基于这个设计有哪些权衡取舍，这样能在深入实现细节时不会感到疑惑；
 
 <!-- more --> 
-# 常见的三种存储引擎
+
+# 列数据库
+## 什么是列数据库？what
+### 行/列数据库的区别
+* 行式数据库：按照行存储的，行式数据库擅长随机读操作不适合用于大数据。像SQL server,Oracle，mysql等传统的是属于行式数据库范畴。
+* 列数据库：列式数据库从一开始就是面向大数据环境下数据仓库的数据分析而产生。
+
+## 列数据库如何存储数据？how
+## 为什么选择列数据库？why
+
+# LSM（Log Structured Merge Trees）日志合并树
+
+## 常见的三种存储引擎
 * `哈希存储引擎`，是哈希表的持久化实现，支持增、删、改以及随机读取操作，但不支持顺序扫描，对应的存储系统为key-value存储系统。对于key-value的插入以及查询，哈希表的复杂度都是O(1)，明显比树的操作O(n)快,如果不需要有序的遍历数据，哈希表就是your Mr.Right，典型产品是Redis,Memcached;
 * `B树存储引擎`是B树的持久化实现，不仅支持单条记录的增、删、读、改操作，还支持顺序扫描（B+树的叶子节点之间的指针），典型产品是RDBMS（Mysql...）;
 * `LSM树`存储引擎和B树存储引擎一样，同样支持增、删、读、改、顺序扫描操作。而且通过批量存储技术规避磁盘随机写入问题。当然凡事有利有弊，LSM树和B+树相比，LSM树牺牲了部分读性能，用来大幅提高写性能，典型应用有BigTable、Hbase、Cassandra、MongoDB等NoSQL数据库;
 
-# LSM（Log Structured Merge Trees）日志合并树
 ## LSM解决了什么问题？
 >磁盘的顺序读写速度很快，随机读写很慢。
 
@@ -49,9 +60,9 @@ LSM树的设计思想非常朴素：在于对数据的修改增量保持在内�
 在查询的时候，因为不知道这个数据到底是在哪里，所以就从最新的一个小的有序结构里做二分查找，找得到就返回，找不到就继续找下一个小有序结构，一直到找到为止。  
 
 很容易可以看出，这样的模式，读取的时间复杂度是`(N/m)*log2(m)`，读取效率是会下降的，这就是LSM的根本思路。  
-为了优化效率Hbase提供`bloomfilter`（加速每个m的检索速度），`compact`（降低N/m）机制；
+为了优化效率Hbase提供`bloomfilter`（加速每个m的检索速度），`compact`（合并小文件降低N/m）机制；
 
-# 为什么选用LSM? why
+## 为什么选用LSM? why
 B+索引树和log型（append）文件操作（数据库WAL日志）是数据读写的两个极端。  
 * B+树读效率高而写效率差；
 * log型文件操作写效率高而读效率差；
@@ -60,6 +71,6 @@ B+索引树和log型（append）文件操作（数据库WAL日志）是数据读
 通过名称可以看出LSM既有日志型的文件操作，提升写效率，又在每个sstable中排序，保证了查询效率。
 
 # 参考
-[浅析LSM存储模型](https://zhuanlan.zhihu.com/p/37193700)
-[Log Structured Merge Trees(LSM) 原理](https://www.open-open.com/lib/view/open1424916275249.html)
+* [浅析LSM存储模型](https://zhuanlan.zhihu.com/p/37193700)
+* [Log Structured Merge Trees(LSM) 原理](https://www.open-open.com/lib/view/open1424916275249.html)
 
