@@ -100,4 +100,5 @@ B+索引树和log型（append）文件操作（数据库WAL日志）是数据读
 # 参考
 * [浅析LSM存储模型](https://zhuanlan.zhihu.com/p/37193700)
 * [Log Structured Merge Trees(LSM) 原理](https://www.open-open.com/lib/view/open1424916275249.html)
+* [为什么机械硬盘随机读取性能和连续读写性能差那么多？](https://www.zhihu.com/question/48254780)
 
