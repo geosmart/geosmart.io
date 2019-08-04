@@ -1,8 +1,9 @@
+## 内存泄漏排查案例
 # 问题描述
-* hbase_rpc_server程序，接收client请求读写数据库；
+* 一个hbase的rpc_server程序，运行后tcp长连接接收rpc client端的请求操作hbase数据库；
 * 程序运行一段时间（3小时）后抛出java.lang.OutOfMemoryError:Java heap space；
 
-# 解决方案
+## 解决方案
 * `jps`命令定位程序进程：`jps -lvm | grep rpc`找到程序pid
 * 服务端启动`jstatd`远程监控服务
 * 客户端以`jvisualvm`工具连接jstatd端口，根据pid查看服务的运行情况；
@@ -18,10 +19,23 @@
 * 在finally中添加statement.close方法释放资源；
 * 重新运行程序，世界一片美好，回复了正常的非倾斜的锯齿状内存占用曲线；
 
-# 排查工具
+
+# 关于内存泄漏
+上面的内存泄漏问题问题是解决了，深入拓展开：
+* 什么是内存泄漏？内存管理、垃圾回收方式；
+* 内存泄漏的常见原因是什么？内存分配不足；代码bug；
+* 不同情况的内存泄漏有什么表现特征？各种OOM情况；
+* 如何定位解决内存泄漏问题？代码定位、工具定位；
+
+# 什么是内存泄漏？
+
+# 内存泄漏的常见原因是什么？
+
+# 如何定位解决内存泄漏问题？
+
+## 排查工具
 内存泄漏排查过程中涉及到的工具：
 * `jps`：查询进程
 * `jvisualvm`、；综合监控：cpu、线程、内存、可视化gc
 * `jstat`：jstat -gcutil查看jvm gc情况：jstat -gcutil 12743 1000 100
 * `jmap`：导出堆转储文件：jmap -dump:live,format=b,file=20190803.dump pid
-
