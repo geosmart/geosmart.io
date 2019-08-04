@@ -7,7 +7,10 @@
 * 服务端启动`jstatd`远程监控服务
 * 客户端以`jvisualvm`工具连接jstatd端口，根据pid查看服务的运行情况；
 * `jvisualvm`中安装visual gc插件，发现eden区每次回收后都有很多的survivor，survivor的1和2区交换几次满了后就都到old gen老年代去了，
-导致每次回收后内存使用量一直在增长，内存使用曲线呈现45度锯齿状；毫无疑问是内存泄漏了
+导致每次回收后内存使用量一直在增长，内存使用曲线呈现45度锯齿状；
+![i内存使用曲线](https://user-images.githubusercontent.com/3156608/62417899-70777900-b68e-11e9-8eb7-37d367b316fb.png)
+![GC可视化](https://user-images.githubusercontent.com/3156608/62417901-78cfb400-b68e-11e9-9ec4-3b6b141757ef.png)
+毫无疑问是内存泄漏了！！！
 * 程序添加OOM时输出日dump志，java程序启动命令新增：-XX:+HeapDumpOnOutOfMemoryError  -XX:HeapDumpPath=/home/users/developer/service/log/mlp
 * 下一次OOM发生后将生成的dump文件导入jvisualvm中分析；
 * dump分析发现最多的是char[]，类实例中大多是insert语句语句中涉及的参数：清楚明白了，是数据库连接未释放
