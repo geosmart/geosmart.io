@@ -18,3 +18,10 @@
 * 在finally中添加statement.close方法释放资源；
 * 重新运行程序，世界一片美好，回复了正常的非倾斜的锯齿状内存占用曲线；
 
+# 排查工具
+内存泄漏排查过程中涉及到的工具：
+* `jps`：查询进程
+* `jvisualvm`、；综合监控：cpu、线程、内存、可视化gc
+* `jstat`：jstat -gcutil查看jvm gc情况：jstat -gcutil 12743 1000 100
+* `jmap`：导出堆转储文件：jmap -dump:live,format=b,file=20190803.dump pid
+
