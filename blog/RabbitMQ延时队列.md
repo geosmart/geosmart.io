@@ -17,6 +17,7 @@ categories: 大数据
 
 # 方案
 可以通过RabbitMQ的死信队列dlx（dead letter exchange）和ttl（time to live）机制实现延迟队列；
+![rabbit延时队列](https://raw.githubusercontent.com/geosmart/geosmart.io/master/blog/img/延时队列.png)
 ## Dead Letter Exchanges
 消息在队列满足达到一定的条件，会被认为是死信消息（dead-lettered），
 这时候，RabbitMQ会重新把这类消息发到另外一个的`exchange`，这个exchange称为`Dead Letter Exchanges`.
