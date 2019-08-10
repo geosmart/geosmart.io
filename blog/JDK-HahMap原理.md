@@ -1,3 +1,14 @@
+---
+title: JDK-HahMap原理
+
+date: 2017-07-03 20:41:50
+
+tags: [JDK]
+
+categories: 后端开发
+
+---
+
 > 从HashMap的`概念，结构，参数，性能，线程安全性，源码解析（put,get,resize），使用场景，常见问题`8个方面进行分析。
 
 >Hash table based `implementation of the Map interface`. 
@@ -6,6 +17,8 @@
 > This class makes `no guarantees as to the order of the map`; in particular, it `does not guarantee that the order will remain constant over time`.
 
 关键点：Map接口的实现、允许null键/值、非同步、不保证有序(比如插入的顺序)、不保证顺序不随时间变化。
+
+<!-- more --> 
 
 ```java
 HashMap<String, Integer> map = new HashMap<String, Integer>();
