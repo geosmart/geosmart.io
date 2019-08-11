@@ -89,9 +89,9 @@ RabbitMQ针对TTL有三种场景：
 >注意：priority优先级最大值为255，建议值是[1,10]范围内；
 
 ### 总结
-* ttl和priority是确定消息何时被消费的两个维度,ttl用于消息重试场景，priority用于类绿色通道场景；
-* 在队列中消息堆积的情况下，ttl时间已到的消息不能被即时消费；
-* 如果一个队列中出现个别消息的ttl和priority值同时很大，而其他消息的ttl较小，这样会导致队列被这种即ttl(皮厚)+心黑(priority)的搞爆掉! 这种消息得用1个单独的队列来特殊对待...
+* `ttl`和`priority`是确定消息何时被消费的两个维度,ttl用于消息重试场景，priority用于类绿色通道场景；
+* 在队列中消息堆积的情况下，ttl时间已到的消息会被`阻塞`，导致不能被即时消费；
+* 如果一个队列中出现个别消息的`ttl和priority值同时很大`，而其他消息的ttl较小，这样会导致后面push的消息被队列头部这种ttl(皮厚)+心黑(priority)的个别消息搞爆掉! 这种消息得用1个单独的队列来特殊对待...
 
 # 参考
 * [rabbitmq-Dead Letter Exchanges](https://www.rabbitmq.com/dlx.html)
