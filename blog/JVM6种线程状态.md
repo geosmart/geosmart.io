@@ -1,4 +1,4 @@
-# 线程状态
+# JVM6种线程状态
 ## NEW-初始状态
 A thread that has not yet started is in this state.
 
