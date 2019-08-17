@@ -71,15 +71,27 @@ RabbitMQ针对TTL有三种场景：
 也就是说，如果消息A设置过期时间是10s，消息B的设置过期时间1s，那么后面的必须要等消息B过期了才会触发A过期，也就是说都要等10s，  
 这怎么搞，完全不能满足需求啊...
 
->解决方案  
+### 解决方案-多级延迟队列
 >* 对于一个队列中每个消息有不同的延迟时间的，可以考虑设置`多级延迟队列`（Per-Queue Message TTL）。
 >* 例如按秒，分，时3个级别，各个级别设置几个队列，并使得延迟相近的尽量放到同一个队列中，尽量减少队列拥堵情况；  
 >* 如，`30s，1m，5m，30m，1h，3h，6h，12h，24h`；预置多个超时区间，
     >* 如果设置的过期时间不在预设队列，比如expire=15m，15在[5,30]区间内，因为放在比其小的会阻塞该队列的其他消息触发过期，所以必须取过期时间较大的队列进行投递，即将expire=15的投递到30m队列；
 
-`todo`考虑将上述的多级延时队列并结合`priority queue`实现； 
->如设置30m队列的最大优先级为1，在expire=15m时，由于15在[5,30]区间内，区间内默认优先级都为0,投递进来的确保是比队列ttl时间短的，这时设置(5,30)之间的优先级为1，那么能保证时间在30m之前的过期时间的消息能不被等于30m的阻塞；  
+### 解决方案-多级延迟队列+延时队列（X）
+* 上述的多级延时队列并结合`priority queue`实现； 
+如设置30m队列的最大优先级为1，在expire=15m时，由于15在[5,30]区间内，区间内默认优先级都为0,投递进来的确保是比队列ttl时间短的，这时设置(5,30)之间的优先级为1，那么能保证时间在30m之前的过期时间的消息能不被等于30m的阻塞；  
+
+* 那么问题来了，如果投递到ttl=30队列中的消息大多是`priority=1`的怎么搞？
+由于rabbitmq会优先处理priority大的消息，那么会导致`priority=`0但是expire时间已到的消息`被阻塞`没法消费；
+
+> Messages which should expire will still only expire from the` head` of the queue. 
+> This means that unlike with normal queues, even `per-queue TTL` can lead to `expired lower-priority` messages getting stuck behind `non-expired higher priority ones`. These messages will never be delivered, but they will appear in queue statistics.
 >注意：priority优先级最大值为255，建议值是[1,10]范围内；
+
+### 总结
+* `ttl`和`priority`是确定消息何时被消费的两个维度,ttl用于消息重试场景，priority用于类绿色通道场景；
+* 在队列中消息堆积的情况下，ttl时间已到的消息会被`阻塞`，导致不能被即时消费；
+* 如果一个队列中出现个别消息的`ttl和priority值同时很大`，而其他消息的ttl较小，这样会导致后面push的消息被队列头部这种ttl(皮厚)+心黑(priority)的个别消息搞爆掉! 这种消息得用1个单独的队列来特殊对待...
 
 # 参考
 * [rabbitmq-Dead Letter Exchanges](https://www.rabbitmq.com/dlx.html)
