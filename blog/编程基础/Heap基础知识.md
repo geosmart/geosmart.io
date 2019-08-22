@@ -175,6 +175,17 @@ public class PriorityHeap {
     }
 
     /***
+     * 获取堆顶节点
+     * @return
+     */
+    public int peak() {
+        if (size() == 0) {
+            throw new IndexOutOfBoundsException("heap is empty");
+        }
+        return heapArray[0];
+    }
+    
+    /***
      * 弹出节点
      * @return
      */
