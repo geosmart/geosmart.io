@@ -9,7 +9,7 @@ categories: 编程基础
 
 ---
  
-关键点：
+关键点：二叉堆基于`一维数组`构建完全二叉树结构，其inser和pop复杂度为log(n),pop的复杂度为O(1)，适用于优先队列场景；
 
 <!-- more --> 
  
@@ -57,19 +57,19 @@ categories: 编程基础
  # 二叉堆(binary heap)
 二叉堆是一种特殊的堆，
 * 二叉堆具有`堆`的性质：父节点的键值总是大于或等于（小于或等于）任何一个子节点的键值；
-* 二叉堆又具有`二叉树`的性质：二叉堆是`完全二叉树`或者是近似完全二叉树）；[参考BinaryTree基础知识](https://github.com/geosmart/geosmart.io/blob/master/blog/编程基础/BinaryTree基础知识.md)
+* 二叉堆又具有`二叉树`的性质：二叉堆是`完全二叉树`或者是近似完全二叉树）；
 * 当父节点的键值大于或等于它的每一个子节点的键值时我们称它为最大堆；
 * 当父节点的键值小于或等于它的每一个子节点的键值时我们称它为最小堆；
 
 ![heap](../img/heap.gif)
 
 ## 二叉堆的性能
-* pop和insert：`O(long(n))`
+* pop和insert：`O(log(n))`
 * peak：`O(1)`
 
 
 ## 二叉堆的节点类型
-设堆大小为N，则
+设堆大小为N，则以下节点的数组Index为：
 * 父节点：P
 * 左孩子：L=2P+1
 * 右孩子：R=2P+2
@@ -80,37 +80,233 @@ categories: 编程基础
 * insert：插入节点
 * peak：查询堆顶
 
-## 构建二叉堆（Heapify）
-将一个未排序的数组构建成二叉堆（升序/降序）；
-将数组假定为一个二叉堆，然后从最后一个父节点开始向上遍历，对每个父节点执行`下沉`操作，直到根节点；
->`Heapify`后只能保证趋势，`HeapSort`
+## 构建二叉堆（heapify）
+* 将一个未排序的数组构建成二叉堆（升序/降序）；
+* 将数组假定为一个二叉堆，然后`从最后一个父节点`开始`向上遍历`，对每个父节点执行`下沉`操作，直到根节点；
+>`Heapify`后只能保证趋势顺序，`HeapSort`保证绝对顺序  
+> 浮浮沉沉
 
 ![heapify](../img/heapify.gif)
 
  ## 插入节点(insert)
- 1. 在数组末尾新增元素,数组大小不足时需要扩容；
- 2. 执行`Heapify`：从最后一个根节点开始执行上浮；
- 4. 直到父节点的值小于或等于该节点，才停止上浮，即插入结束。
- 
->这个向上走并且修复最大堆特性的操作没有公认的名字。我们叫它`ShiftUp` （上移）但是还有人叫它`BubbleUp`或者`IncreaseKey`操作.
+* 在`堆尾`新增元素,数组大小不足时需要扩容；
+* 从最后一个父节点开始执行`上浮`；
+* 直到父节点的值小于或等于该节点，才停止上浮，即插入结束。
 
- ## 提取最大/小节点(pop)
- 删除后需要要保持堆的完全二叉树特性；
- 1. 将堆最后一个元素替换到堆顶位置；
- 2. 删除堆顶元素；
- 3. 从堆顶开始，执行下沉（即与左右子节点交换位置）；
+>浮浮沉沉
+
+## 提取最大/小节点(pop)
+删除后需要要保持堆的完全二叉树特性；
+* 将`堆尾`元素替换到`堆顶`位置；
+* 抽取`堆顶`元素；
+* 以新的`堆顶`元素作为父节点，执行`下沉`；
+* 直到子节点小于或等于改节点，才通知下沉；
+* 返回抽取的堆顶元素，即pop结束;
  
->这个向下走并修复最大堆特性的操作没有公认的名字。我们叫它`ShiftDown`（下移）但是还有人叫它`BubbleDown`或者`Heapify`操作。
+>浮沉沉沉
 
 # 堆排序
 可以利于堆的特性(顶总是最值)来处理排序问题；重复从堆顶获取最值来完成数组排序；
-1. 对未排序的数组执行heapify，构建一个最大堆
+1. 对未排序的数组执行heapify，构建一个最大堆;
 2. 重复pop堆顶元素操作（下沉调整），直到堆元素为1；
-3. pop出的元素组成的数组即为排序后结果
+3. pop出的元素组成的数组即为排序后结果;
 
 ![heapsort](../img/heapsort.gif)
 
 >时间复杂度：O(n) + O(n*log(n)) = O(n*log(n))
 
+# 二叉堆的Java实现
+```java 
+package me.demo.algorithm.heap;
+
+import com.alibaba.fastjson.JSON;
+
+import java.util.Arrays;
+
+/**
+ * 二叉堆
+ * 示例日志：https://gist.github.com/geosmart/c31fe452f0b536ea12fbda72c1385553
+ * 源码地址：https://github.com/geosmart/me.demo.algorithm/blob/master/src/main/java/me/demo/algorithm/heap/PriorityHeap.java
+ */
+public class PriorityHeap {
+    /***
+     * 堆数组
+     */
+    private int[] heapArray;
+
+    public PriorityHeap(int[] array) {
+        heapArray = array;
+    }
+
+    public void heapify() {
+        int parentIdx = getLastParentNode();
+        heapify(parentIdx);
+    }
+
+    /***
+     * 构建堆
+     * @param parentIdx 父节点索引
+     */
+    private void heapify(int parentIdx) {
+        //从最后一个父节点，逐级向上，遍历到根节点
+        while (parentIdx >= 0) {
+            //求父节点与左右孩子的最小值
+            int minIdx = getMinNode(parentIdx);
+            System.out.println(String.format("calc sub tree of parent(%s),min=%s,need swap=%s", heapArray[parentIdx], heapArray[minIdx], (minIdx != parentIdx)));
+            //交换位置：最小值不在父节点时
+            if (minIdx != parentIdx) {
+                swap(heapArray, parentIdx, minIdx);
+                System.out.println(String.format("swap index %s<->%s", heapArray[parentIdx], heapArray[minIdx]));
+                System.out.println(String.format("sub tree of parent[%s] is leaf node? %s", heapArray[minIdx], getLeftChild(minIdx) == -1));
+                //左孙子为叶子结点：以当前最小结点作为父节点，调整树使其满足parent比children小
+                if (getLeftChild(minIdx) != -1) {
+                    heapify(minIdx);
+                }
+            }
+            parentIdx = parentIdx - 1;
+        }
+    }
+
+    /***
+     * 插入节点
+     * @param node 节点值
+     */
+    public void insert(int node) {
+        System.out.println(String.format("insert node[%s]", node));
+        //grow
+        int[] newArray = new int[heapArray.length + 1];
+        System.arraycopy(heapArray, 0, newArray, 0, heapArray.length);
+        newArray[newArray.length - 1] = node;
+
+        //siftup from last parentNode
+        int parentIdx = newArray.length / 2 - 1;
+        heapArray = newArray;
+        heapify(parentIdx);
+        System.out.println(String.format("insert node[%s],heap-%s", node, JSON.toJSONString(heapArray)));
+    }
+
+    /***
+     * 弹出节点
+     * @return
+     */
+    public int pop() {
+        System.out.println("pop node");
+        if (size() == 0) {
+            throw new IndexOutOfBoundsException("heap is empty");
+        }
+        //移除堆顶节点
+        int root = heapArray[0];
+        if (size() == 1) {
+            heapArray = new int[0];
+            return root;
+        }
+        //堆尾节点替换为根节点
+        heapArray[0] = heapArray[heapArray.length - 1];
+
+        int[] newArray = new int[heapArray.length - 1];
+        System.arraycopy(heapArray, 0, newArray, 0, heapArray.length - 1);
+        heapArray = newArray;
+
+        //从根节点执行下沉
+        heapify(0);
+        return root;
+    }
+
+    /***
+     * 堆排序
+     */
+    public void heapSort() {
+        //构建堆
+        int parentIdx = getLastParentNode();
+        heapify(parentIdx);
+
+        int[] sortArray = new int[heapArray.length];
+        //逐个弹出堆顶最值即可完成排序
+        for (int i = 0; i < sortArray.length; i++) {
+            sortArray[i] = pop();
+        }
+        heapArray = sortArray;
+        System.out.println(String.format("heapSort-%s", JSON.toJSONString(heapArray)));
+    }
+
+    /***
+     * 获取二叉堆中某个分支（p,l,r）的最小节点index
+     * @param parentIdx
+     * @return
+     */
+    private int getMinNode(int parentIdx) {
+        int leftIdx = getLeftChild(parentIdx);
+        int rightIdx = getRightChild(parentIdx);
+        int minIdx;
+        minIdx = getMinIdx(leftIdx, rightIdx);
+        minIdx = getMinIdx(minIdx, parentIdx);
+        return minIdx;
+    }
+
+    private int getMinIdx(int idx1, int idx2) {
+        if (idx1 == -1) {
+            return idx2;
+        } else if (idx2 == -1) {
+            return idx1;
+        }
+
+        if (heapArray[idx1] < heapArray[idx2]) {
+            return idx1;
+        } else {
+            return idx2;
+        }
+    }
+
+    /***
+     * 获取二叉堆的最后一个父节点的index
+     * @return
+     */
+    private int getLastParentNode() {
+        return (heapArray.length >> 1) - 1;
+    }
+
+
+    /***
+     * 获取左孩子index
+     * @param parentIdx
+     * @return
+     */
+    private int getLeftChild(int parentIdx) {
+        int leftIdx = (parentIdx << 1) + 1;
+        leftIdx = leftIdx > heapArray.length - 1 ? -1 : leftIdx;
+        return leftIdx;
+    }
+
+    /***
+     * 获取右孩子index
+     * @param parentIdx
+     * @return
+     */
+    private int getRightChild(int parentIdx) {
+        int rightIdx = (parentIdx << 1) + 2;
+        rightIdx = rightIdx > heapArray.length - 1 ? -1 : rightIdx;
+        return rightIdx;
+    }
+
+    /***
+     * 交换a中idx1和idx2的值
+     */
+    private void swap(int[] a, int idx1, int idx2) {
+        int min = a[idx2];
+        a[idx2] = a[idx1];
+        a[idx1] = min;
+    }
+
+    public int size() {
+        return heapArray.length;
+    }
+
+    public int[] getHeapArray() {
+        return heapArray;
+    }
+}
+
+```
 # 参考
+[BinaryTree基础知识](https://github.com/geosmart/geosmart.io/blob/master/blog/编程基础/BinaryTree基础知识.md)
 [A Closer Look at Heapsort](https://medium.com/@parulbaweja8/a-closer-look-at-heapsort-c83b331f8353)
