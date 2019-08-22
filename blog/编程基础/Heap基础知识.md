@@ -117,16 +117,10 @@ categories: 编程基础
 
 # 二叉堆的Java实现
 ```java 
-package me.demo.algorithm.heap;
-
-import com.alibaba.fastjson.JSON;
-
-import java.util.Arrays;
-
 /**
  * 二叉堆
  * 示例日志：https://gist.github.com/geosmart/c31fe452f0b536ea12fbda72c1385553
- * 源码地址：https://github.com/geosmart/me.demo.algorithm/blob/master/src/main/java/me/demo/algorithm/heap/PriorityHeap.java
+ * 完整源码地址：https://github.com/geosmart/me.demo.algorithm/blob/master/src/main/java/me/demo/algorithm/heap/PriorityHeap.java
  */
 public class PriorityHeap {
     /***
@@ -152,12 +146,9 @@ public class PriorityHeap {
         while (parentIdx >= 0) {
             //求父节点与左右孩子的最小值
             int minIdx = getMinNode(parentIdx);
-            System.out.println(String.format("calc sub tree of parent(%s),min=%s,need swap=%s", heapArray[parentIdx], heapArray[minIdx], (minIdx != parentIdx)));
             //交换位置：最小值不在父节点时
             if (minIdx != parentIdx) {
                 swap(heapArray, parentIdx, minIdx);
-                System.out.println(String.format("swap index %s<->%s", heapArray[parentIdx], heapArray[minIdx]));
-                System.out.println(String.format("sub tree of parent[%s] is leaf node? %s", heapArray[minIdx], getLeftChild(minIdx) == -1));
                 //左孙子为叶子结点：以当前最小结点作为父节点，调整树使其满足parent比children小
                 if (getLeftChild(minIdx) != -1) {
                     heapify(minIdx);
@@ -172,7 +163,6 @@ public class PriorityHeap {
      * @param node 节点值
      */
     public void insert(int node) {
-        System.out.println(String.format("insert node[%s]", node));
         //grow
         int[] newArray = new int[heapArray.length + 1];
         System.arraycopy(heapArray, 0, newArray, 0, heapArray.length);
@@ -182,7 +172,6 @@ public class PriorityHeap {
         int parentIdx = newArray.length / 2 - 1;
         heapArray = newArray;
         heapify(parentIdx);
-        System.out.println(String.format("insert node[%s],heap-%s", node, JSON.toJSONString(heapArray)));
     }
 
     /***
@@ -190,7 +179,6 @@ public class PriorityHeap {
      * @return
      */
     public int pop() {
-        System.out.println("pop node");
         if (size() == 0) {
             throw new IndexOutOfBoundsException("heap is empty");
         }
@@ -226,87 +214,10 @@ public class PriorityHeap {
             sortArray[i] = pop();
         }
         heapArray = sortArray;
-        System.out.println(String.format("heapSort-%s", JSON.toJSONString(heapArray)));
-    }
-
-    /***
-     * 获取二叉堆中某个分支（p,l,r）的最小节点index
-     * @param parentIdx
-     * @return
-     */
-    private int getMinNode(int parentIdx) {
-        int leftIdx = getLeftChild(parentIdx);
-        int rightIdx = getRightChild(parentIdx);
-        int minIdx;
-        minIdx = getMinIdx(leftIdx, rightIdx);
-        minIdx = getMinIdx(minIdx, parentIdx);
-        return minIdx;
-    }
-
-    private int getMinIdx(int idx1, int idx2) {
-        if (idx1 == -1) {
-            return idx2;
-        } else if (idx2 == -1) {
-            return idx1;
-        }
-
-        if (heapArray[idx1] < heapArray[idx2]) {
-            return idx1;
-        } else {
-            return idx2;
-        }
-    }
-
-    /***
-     * 获取二叉堆的最后一个父节点的index
-     * @return
-     */
-    private int getLastParentNode() {
-        return (heapArray.length >> 1) - 1;
-    }
-
-
-    /***
-     * 获取左孩子index
-     * @param parentIdx
-     * @return
-     */
-    private int getLeftChild(int parentIdx) {
-        int leftIdx = (parentIdx << 1) + 1;
-        leftIdx = leftIdx > heapArray.length - 1 ? -1 : leftIdx;
-        return leftIdx;
-    }
-
-    /***
-     * 获取右孩子index
-     * @param parentIdx
-     * @return
-     */
-    private int getRightChild(int parentIdx) {
-        int rightIdx = (parentIdx << 1) + 2;
-        rightIdx = rightIdx > heapArray.length - 1 ? -1 : rightIdx;
-        return rightIdx;
-    }
-
-    /***
-     * 交换a中idx1和idx2的值
-     */
-    private void swap(int[] a, int idx1, int idx2) {
-        int min = a[idx2];
-        a[idx2] = a[idx1];
-        a[idx1] = min;
-    }
-
-    public int size() {
-        return heapArray.length;
-    }
-
-    public int[] getHeapArray() {
-        return heapArray;
     }
 }
 
 ```
 # 参考
-[BinaryTree基础知识](https://github.com/geosmart/geosmart.io/blob/master/blog/编程基础/BinaryTree基础知识.md)
-[A Closer Look at Heapsort](https://medium.com/@parulbaweja8/a-closer-look-at-heapsort-c83b331f8353)
+* [BinaryTree基础知识](https://github.com/geosmart/geosmart.io/blob/master/blog/编程基础/BinaryTree基础知识.md)
+* [A Closer Look at Heapsort](https://medium.com/@parulbaweja8/a-closer-look-at-heapsort-c83b331f8353)
