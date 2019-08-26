@@ -9,7 +9,7 @@ categories: 后端开发
 
 ---
 
-> 从PriorityQueue的`概念，结构，参数，性能，线程安全性，源码解析（offer,poll,remove,add,grow），使用场景，常见问题`8个方面进行分析。
+> 从PriorityQueue的`概念，结构，参数，源码解析（offer,poll,remove,add,grow），性能，线程安全性，使用场景，常见问题`8个方面进行分析。
 
 >* An `unbounded priority queue` based on a `priority heap`. 
 >* The elements of the priority queue are ordered according to their `natural ordering`, or by a `Comparator provided` at queue >construction time, depending on which constructor is used. 
@@ -39,6 +39,127 @@ categories: 后端开发
 
 >PriorityQueue的类成员
 ![priority_queue_class](img/priority_queue_class1.png)
+
+# 结构
+一维数组
+
+* Priority queue represented as a `balanced binary heap`:
+* the two children of queue[n] are queue[2*n+1] and queue[2*(n+1)].  
+* The priority queue is `ordered by comparator`, or by the elements' `natural ordering`, 
+* if comparator is null: For each node n in the heap and each descendant d of n, n <= d.  
+* The element with the `lowest value` is in queue[0], assuming the queue is nonempty.
+```java
+    // non-private to simplify nested class access
+    transient Object[] queue; 
+```
+
+# 参数
+* `initialCapacity`：初始化容量，默认为`11`；
+* `comparator`:用于队列中元素排序；
+* 构造函数：新建1个空的队列；
+```java
+    public PriorityQueue(int initialCapacity, Comparator<? super E> comparator) {
+        this.queue = new Object[initialCapacity];
+        this.comparator = comparator;
+    }
+```
+* 如果是由`SortedSet`,`PriorityQueue`这种有序的结构构建优先队列，直接`Arrays.copyOf`把数据复制到queue数组中；
+* 如果是由无序数组构建优先队列，需要把数据复制到queue数组中后，执行`构建堆(heapify)`操作；
+
+# 源码解析
+## heapify-构建堆
+```java
+    /**
+     * Establishes the heap invariant (described above) in the entire tree,
+     * assuming nothing about the order of the elements prior to the call.
+     */
+    @SuppressWarnings("unchecked")
+    private void heapify() {
+        //从最后一个非叶子节点（父亲节点）开始遍历所有父节点，直到堆顶
+        for (int i = (size >>> 1) - 1; i >= 0; i--){
+            //下沉（将3 or 2者中较大元素下沉）
+            siftDown(i, (E) queue[i]);
+        }
+    }
+```
+
+### siftDown-下沉
+```java
+
+    /**
+     * Inserts item x at position k, maintaining heap invariant by demoting x down the tree repeatedly
+     * until it is less than or equal to its children or is a leaf.
+     *
+     * @param k the position to fill
+     * @param x the item to insert
+     */
+    private void siftDown(int k, E x) {
+        if (comparator != null) {
+            //按自定义顺序swap下沉
+            siftDownUsingComparator(k, x);
+        } else {
+            //按字典顺序swap下沉
+            siftDownComparable(k, x);
+        }
+    }
+```
+
+> 按字典顺序swap下沉
+```java
+    private void siftDownComparable(int k, E x) {
+        Comparable<? super E> key = (Comparable<? super E>) x;
+        int half = size >>> 1;
+        //二叉树结构，下标大于size/2都是叶子节点，其他的节点都有子节点。
+        //循环至最后一个非叶子节点：loop while a non-leaf
+        while (k < half) {
+            //假设left节点为child中的最小值节点
+            int child = (k << 1) + 1;
+            int right = child + 1;
+            Object c = queue[child];
+            //right没超过数组大小，且right<left，则最小为right
+            if (right < size && ((Comparable<? super E>) c).compareTo((E) queue[right]) > 0) {
+                c = queue[child = right];
+            }
+            //如果parent节点<min(left,right),则不需要swap
+            if (key.compareTo((E) c) <= 0) {
+                break;
+            }
+            //否则swap parent节点和min(left,right)的节点
+            queue[k] = c;
+            //当前父节点取最小值的index
+            k = child;
+        }
+        //当前节点赋值到n轮swap后的最小值
+        //或者当前节点没有子节点，则k是叶子节点的下标，没有比它更小的了，直接赋值即可
+        queue[k] = key;
+    }
+```
+
+> 按自定义顺序swap下沉，与siftDownComparable类似
+```java
+    @SuppressWarnings("unchecked")
+    private void siftDownUsingComparator(int k, E x) {
+        int half = size >>> 1;
+        while (k < half) {
+            int child = (k << 1) + 1;
+            Object c = queue[child];
+            int right = child + 1;
+            if (right < size &&
+                comparator.compare((E) c, (E) queue[right]) > 0)
+                c = queue[child = right];
+            if (comparator.compare(x, (E) c) <= 0)
+                break;
+            queue[k] = c;
+            k = child;
+        }
+        queue[k] = x;
+    }
+```
+## offer
+## add
+## pop
+## remove
+## peek
 
 # 参考
 * [jdk8.PriorityQueue](https://docs.oracle.com/javase/8/docs/api/java/util/PriorityQueue.html) 
