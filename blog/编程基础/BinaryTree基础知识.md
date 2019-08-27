@@ -78,3 +78,14 @@ A Binary tree is Perfect Binary Tree in which all internal nodes have two childr
     /  \        /  \
   40    50    100   40
 ```
+
+## 二叉搜索树(Binary Search Tree)
+二叉树是一种数据结构，树有左右2个孩子，而二叉搜索树是一种特殊的二叉树
+* 左孩子节点比父节点小
+* 右孩子节点比父节点大
+
+```
+  2
+ / \
+1   3
+```
