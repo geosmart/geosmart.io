@@ -106,32 +106,44 @@ categories: 后端开发
 
 > 按字典顺序swap下沉
 ```java
-    private void siftDownComparable(int k, E x) {
-        Comparable<? super E> key = (Comparable<? super E>) x;
+    @SuppressWarnings("unchecked")
+    private void siftDownComparable(int parent, E x) {
+        Comparable<? super E> parentVal = (Comparable<? super E>) x;
+        System.out.println(String.format("start siftdown,parent[%s]=%s", parent, x));
         int half = size >>> 1;
         //二叉树结构，下标大于size/2都是叶子节点，其他的节点都有子节点。
-        //循环至最后一个非叶子节点：loop while a non-leaf
-        while (k < half) {
+        //循环直到k没有子节点：loop while a non-leaf
+        while (parent < half) {
+            dump();
             //假设left节点为child中的最小值节点
-            int child = (k << 1) + 1;
-            int right = child + 1;
-            Object c = queue[child];
-            //right没超过数组大小，且right<left，则最小为right
-            if (right < size && ((Comparable<? super E>) c).compareTo((E) queue[right]) > 0) {
-                c = queue[child = right];
+            int left = (parent << 1) + 1;
+            int right = left + 1;
+            System.out.println(String.format("handle parent[%s]=%s,left[%s]=%s,right[%s]=%s", parent, parentVal, left, queue[left], right, queue[right]));
+            Object minVal = queue[left];
+            //存在right，且right<left，则最小为right
+            if (right < size && ((Comparable<? super E>) minVal).compareTo((E) queue[right]) > 0) {
+                System.out.println(String.format("min(left(%s),right(%s))=%s", minVal, queue[right], queue[right]));
+                left = right;
+                minVal = queue[right];
             }
             //如果parent节点<min(left,right),则不需要swap
-            if (key.compareTo((E) c) <= 0) {
+            if (parentVal.compareTo((E) minVal) <= 0) {
+                System.out.println(String.format("parent(%s)<min(%s),break", parentVal, minVal));
                 break;
             }
+            System.out.println(String.format("swap parent(%s)<->min(%s)", queue[parent], minVal));
             //否则swap parent节点和min(left,right)的节点
-            queue[k] = c;
-            //当前父节点取最小值的index
-            k = child;
+            queue[parent] = minVal;
+            System.out.println(String.format("now parent[%s]=%s", parent, minVal));
+            //当前父节点取最小值的index继续loop
+            parent = left;
+            System.out.println(String.format("set parent idx=%s to loop", left));
         }
-        //当前节点赋值到n轮swap后的最小值
-        //或者当前节点没有子节点，则k是叶子节点的下标，没有比它更小的了，直接赋值即可
-        queue[k] = key;
+        //1.当前节点没有子节点，则k是叶子节点的下标，没有比它更小的了，直接赋值即可
+        //2.当前节点下沉n轮后，将节点的值放到最终不需要再交换的位置（没有比它更小的或者到达叶子节点）
+        System.out.println(String.format("end siftdown,set parent[%s]=%s", parent, parentVal));
+        queue[parent] = parentVal;
+        dump();
     }
 ```
 
