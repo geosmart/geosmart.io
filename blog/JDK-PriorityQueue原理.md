@@ -56,6 +56,8 @@ categories: 后端开发
 # 参数
 * `initialCapacity`：初始化容量，默认为`11`；
 * `comparator`:用于队列中元素排序；
+* `size`:记录队列中元素个数；
+* `modCount`:记录队列修改次数；
 * 构造函数：新建1个空的队列；
 ```java
     public PriorityQueue(int initialCapacity, Comparator<? super E> comparator) {
@@ -168,6 +170,117 @@ categories: 后端开发
     }
 ```
 ## offer
+```java
+    /**
+     * The number of times this priority queue has been structurally modified 
+     */
+    transient int modCount = 0; 
+```
+```java
+    /** 
+     * 节点插入到队列 
+     */
+    public boolean offer(E e) {
+        if (e == null) {
+            throw new NullPointerException();
+        }
+        //修改次数+1
+        modCount++;
+        int i = size;
+        if (i >= queue.length) {
+            //队列已满时，按50%动态扩容
+            grow(i + 1);
+        }
+        size = i + 1;
+        if (i == 0) {
+            //队列为空时
+            queue[0] = e;
+        } else {
+            //上浮调整堆顺序
+            siftUp(i, e);
+        }
+        return true;
+    }
+```
+>队列已满时，按50%动态扩容
+```java
+    /**
+     * Increases the capacity of the array.
+     *
+     * @param minCapacity the desired minimum capacity
+     */
+    private void grow(int minCapacity) {
+        int oldCapacity = queue.length;
+        // Double size if small; else grow by 50%
+        int newCapacity = oldCapacity + ((oldCapacity < 64) ?
+                (oldCapacity + 2) :
+                (oldCapacity >> 1));
+        // overflow-conscious code
+        if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
+        queue = Arrays.copyOf(queue, newCapacity);
+    }
+```
+
+> 节点上浮调整
+```java
+    
+    /**
+     * Inserts item x at position k, 
+     * maintaining heap invariant by promoting x up the tree until it is greater than or equal to its parent, or is the root. 
+     * 为保持堆的性质，将插入元素x一路上浮，直到满足x节点值>=父节点值，或者到达根节点；
+     * @param k the position to fill 插入位置
+     * @param x the item to insert 插入元素
+     */
+    private void siftUp(int k, E x) {
+        if (comparator != null) {
+            siftUpUsingComparator(k, x);
+        } else {
+            siftUpComparable(k, x);
+        }
+    }
+```
+    
+> 按字典顺序swap上浮
+```java
+    @SuppressWarnings("unchecked")
+    private void siftUpComparable(int k, E x) {
+        Comparable<? super E> key = (Comparable<? super E>) x;
+        //从当前节点循环上浮到堆顶节点
+        while (k > 0) {
+            //k节点的父节点索引
+            int parent = (k - 1) >>> 1;
+            //k节点的父节点值
+            Object e = queue[parent];
+            //比较k节点与父节点的值大小，父节点值较小时，终止遍历
+            if (key.compareTo((E) e) >= 0) {
+                break;
+            }
+            //父节点值较大时，交换k节点与父节点值
+            queue[k] = e;
+            //当前节点移到父节点，继续向上遍历
+            k = parent;
+        }
+        //将当前节点值赋给交换后的父节点
+        queue[k] = key;
+    }
+```
+> 按自定义顺序swap上浮，与siftUpComparable类似
+```java
+    @SuppressWarnings("unchecked")
+    private void siftUpUsingComparator(int k, E x) {
+        while (k > 0) {
+            int parent = (k - 1) >>> 1;
+            Object e = queue[parent];
+            if (comparator.compare(x, (E) e) >= 0)
+                break;
+            queue[k] = e;
+            k = parent;
+        }
+        queue[k] = x;
+    }
+
+```
 ## add
 ## pop
 ## remove
@@ -175,3 +288,5 @@ categories: 后端开发
 
 # 参考
 * [jdk8.PriorityQueue](https://docs.oracle.com/javase/8/docs/api/java/util/PriorityQueue.html) 
+* [堆排序](https://juejin.im/post/5cba5cb9518825327e23f078)
+* [java集合之PriorityQueue源码分析](https://juejin.im/post/5cba5cb9518825327e23f078)
