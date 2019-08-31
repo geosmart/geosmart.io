@@ -70,8 +70,7 @@ categories: 编程基础
 
 ## 二叉堆的性能
 * pop和insert：`O(log(n))`
-* peak：`O(1)`
-
+* peek：`O(1)`
 
 ## 二叉堆的节点类型
 设堆大小为N，则以下节点的数组Index为：
