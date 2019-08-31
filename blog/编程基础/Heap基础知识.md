@@ -127,111 +127,165 @@ categories: 编程基础
  * 示例日志：https://gist.github.com/geosmart/c31fe452f0b536ea12fbda72c1385553
  * 完整源码地址：https://github.com/geosmart/me.demo.algorithm/blob/master/src/main/java/me/demo/algorithm/heap/PriorityHeap.java
  */
+import com.alibaba.fastjson.JSON;
+import java.util.Arrays;
+/**
+ * 二叉堆
+ */
 public class PriorityHeap {
     /***
      * 堆数组
      */
-    private int[] heapArray;
+    private Object[] heap;
 
-    public PriorityHeap(int[] array) {
-        heapArray = array;
-    }
+    /***
+     * 堆大小
+     */
+    private int size;
 
-    public void heapify() {
-        int parentIdx = getLastParentNode();
-        heapify(parentIdx);
+    public PriorityHeap(Object[] array) {
+        heap = array;
+        size = heap.length;
     }
 
     /***
-     * 构建堆
-     * @param parentIdx 父节点索引
+     * 将数组调整为满足parent>(left,right)的堆结构
      */
-    private void heapify(int parentIdx) {
-        //从最后一个父节点，逐级向上，遍历到根节点
-        while (parentIdx >= 0) {
-            //求父节点与左右孩子的最小值
-            int minIdx = getMinNode(parentIdx);
-            //交换位置：最小值不在父节点时
-            if (minIdx != parentIdx) {
-                swap(heapArray, parentIdx, minIdx);
-                //左孙子为叶子结点：以当前最小结点作为父节点，调整树使其满足parent比children小
-                if (getLeftChild(minIdx) != -1) {
-                    heapify(minIdx);
-                }
-            }
-            parentIdx = parentIdx - 1;
+    public void heapify() {
+        System.out.println("orgin heap.");
+        printHeap();
+        //从最后一个父节点开始下沉
+        int i = (size >> 1) - 1;
+        while (i >= 0) {
+            System.out.println(String.format("heapify,parent[%s] siftdown", i));
+            siftDown(i, (int) heap[i]);
+            i--;
+            printHeap();
         }
     }
+
 
     /***
      * 插入节点
      * @param node 节点值
      */
-    public void insert(int node) {
-        //grow
-        int[] newArray = new int[heapArray.length + 1];
-        System.arraycopy(heapArray, 0, newArray, 0, heapArray.length);
-        newArray[newArray.length - 1] = node;
+    public void add(int node) {
+        heap = Arrays.copyOf(heap, size + 1);
+        size = size + 1;
+        heap[size - 1] = node;
+        //从最后一个节点开始,逐父节点单线遍历上浮
+        siftUp(size - 1, (int) heap[size - 1]);
+    }
 
-        //siftup from last parentNode
-        int parentIdx = newArray.length / 2 - 1;
-        heapArray = newArray;
-        heapify(parentIdx);
+    /***
+     * 弹出节点
+     * @return 堆顶节点值
+     */
+    public Object pop() {
+        if (size == 0) {
+            throw new IndexOutOfBoundsException("heap is empty");
+        }
+        //弹出节点
+        Object node = heap[0];
+        //堆尾节点移动到堆顶节点
+        heap[0] = heap[heap.length - 1];
+        //数组
+        heap = Arrays.copyOf(heap, size - 1);
+        size -= 1;
+        if (size > 1) {
+            //顶点下沉
+            System.out.println(String.format("parent[%s] siftdown", 0));
+            siftDown(0, (int) heap[0]);
+        }
+        return node;
     }
 
     /***
      * 获取堆顶节点
-     * @return
+     * @return 堆顶节点值
      */
-    public int peak() {
-        if (size() == 0) {
+    public Object peak() {
+        if (size == 0) {
             throw new IndexOutOfBoundsException("heap is empty");
         }
-        return heapArray[0];
+        return heap[0];
     }
-    
+
     /***
-     * 弹出节点
-     * @return
+     * 节点下沉
+     * @param parent 父节点index
+     * @param value 父节点值
      */
-    public int pop() {
-        if (size() == 0) {
-            throw new IndexOutOfBoundsException("heap is empty");
+    private void siftDown(int parent, int value) {
+        //当parent还有子节点时进行循环swap
+        while (parent < (size / 2)) {
+            //假设left最小
+            int left = (parent << 1) + 1;
+            int right = left + 1;
+            if (right < size && (int) heap[right] < (int) heap[left]) {
+                //right最小
+                left = right;
+            }
+            //parent最小
+            if (value < (int) heap[left]) {
+                break;
+            }
+            //交换parent与最小值
+            heap[parent] = heap[left];
+            parent = left;
         }
-        //移除堆顶节点
-        int root = heapArray[0];
-        if (size() == 1) {
-            heapArray = new int[0];
-            return root;
+        //将原始parent放到最终交换后的位置
+        heap[parent] = value;
+    }
+
+    /***
+     * 节点上浮
+     * @param child 节点index
+     * @param value 节点值
+     */
+    private void siftUp(int child, int value) {
+        //从最后一个节点开始,逐父节点单线遍历上浮
+        while (child > 0) {
+            System.out.println(String.format("node[%s] siftup", child));
+            int parent = (child - 1) / 2;
+            //父节点大，则交换上浮
+            if ((int) heap[child] < (int) heap[parent]) {
+                heap[child] = heap[parent];
+                heap[parent] = value;
+                child = parent;
+                printHeap();
+            } else {
+                break;
+            }
         }
-        //堆尾节点替换为根节点
-        heapArray[0] = heapArray[heapArray.length - 1];
-
-        int[] newArray = new int[heapArray.length - 1];
-        System.arraycopy(heapArray, 0, newArray, 0, heapArray.length - 1);
-        heapArray = newArray;
-
-        //从根节点执行下沉
-        heapify(0);
-        return root;
     }
 
     /***
      * 堆排序
      */
-    public void heapSort() {
+    public int[] heapSort() {
         //构建堆
-        int parentIdx = getLastParentNode();
-        heapify(parentIdx);
+        heapify();
 
-        int[] sortArray = new int[heapArray.length];
+        int[] sortArray = new int[heap.length];
         //逐个弹出堆顶最值即可完成排序
         for (int i = 0; i < sortArray.length; i++) {
-            sortArray[i] = pop();
+            System.out.println(String.format("pop[%s]", i));
+            sortArray[i] = (int) pop();
         }
-        heapArray = sortArray;
+        return sortArray;
     }
+
+    public void printHeap() {
+        System.out.println(JSON.toJSONString(getHeap()));
+    }
+
+    public Object[] getHeap() {
+        return heap;
+    }
+
 }
+
 
 ```
 # 参考
