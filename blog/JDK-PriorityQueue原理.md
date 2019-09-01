@@ -111,41 +111,31 @@ categories: 后端开发
     @SuppressWarnings("unchecked")
     private void siftDownComparable(int parent, E x) {
         Comparable<? super E> parentVal = (Comparable<? super E>) x;
-        System.out.println(String.format("start siftdown,parent[%s]=%s", parent, x));
         int half = size >>> 1;
         //二叉树结构，下标大于size/2都是叶子节点，其他的节点都有子节点。
         //循环直到k没有子节点：loop while a non-leaf
         while (parent < half) {
-            dump();
             //假设left节点为child中的最小值节点
             int left = (parent << 1) + 1;
             int right = left + 1;
-            System.out.println(String.format("handle parent[%s]=%s,left[%s]=%s,right[%s]=%s", parent, parentVal, left, queue[left], right, queue[right]));
             Object minVal = queue[left];
             //存在right，且right<left，则最小为right
             if (right < size && ((Comparable<? super E>) minVal).compareTo((E) queue[right]) > 0) {
-                System.out.println(String.format("min(left(%s),right(%s))=%s", minVal, queue[right], queue[right]));
                 left = right;
                 minVal = queue[right];
             }
             //如果parent节点<min(left,right),则不需要swap
             if (parentVal.compareTo((E) minVal) <= 0) {
-                System.out.println(String.format("parent(%s)<min(%s),break", parentVal, minVal));
                 break;
             }
-            System.out.println(String.format("swap parent(%s)<->min(%s)", queue[parent], minVal));
             //否则swap parent节点和min(left,right)的节点
             queue[parent] = minVal;
-            System.out.println(String.format("now parent[%s]=%s", parent, minVal));
             //当前父节点取最小值的index继续loop
             parent = left;
-            System.out.println(String.format("set parent idx=%s to loop", left));
         }
         //1.当前节点没有子节点，则k是叶子节点的下标，没有比它更小的了，直接赋值即可
         //2.当前节点下沉n轮后，将节点的值放到最终不需要再交换的位置（没有比它更小的或者到达叶子节点）
-        System.out.println(String.format("end siftdown,set parent[%s]=%s", parent, parentVal));
         queue[parent] = parentVal;
-        dump();
     }
 ```
 
@@ -169,6 +159,7 @@ categories: 后端开发
         queue[k] = x;
     }
 ```
+
 ## offer
 ```java
     /**
@@ -202,7 +193,7 @@ categories: 后端开发
         return true;
     }
 ```
->队列已满时，按50%动态扩容
+>队列已满时，动态扩容：小于64时2倍扩容，大于64时0.5倍扩容；
 ```java
     /**
      * Increases the capacity of the array.
@@ -211,14 +202,25 @@ categories: 后端开发
      */
     private void grow(int minCapacity) {
         int oldCapacity = queue.length;
-        // Double size if small; else grow by 50%
-        int newCapacity = oldCapacity + ((oldCapacity < 64) ?
-                (oldCapacity + 2) :
-                (oldCapacity >> 1));
-        // overflow-conscious code
+        // Double size if size<64; else grow by 50%
+        int newCapacity = oldCapacity + (
+            (oldCapacity < 64) ? (oldCapacity + 2) :(oldCapacity >> 1)
+            );
+        // overflow-conscious code 防越界
         if (newCapacity - MAX_ARRAY_SIZE > 0)
             newCapacity = hugeCapacity(minCapacity);
+        //将queue中数据复制到扩容后的queue
         queue = Arrays.copyOf(queue, newCapacity);
+    }
+    
+    private static int hugeCapacity(int minCapacity) {
+        // overflow
+        if (minCapacity < 0) {
+            throw new OutOfMemoryError();
+        }
+        return (minCapacity > MAX_ARRAY_SIZE) ?
+                Integer.MAX_VALUE :
+                MAX_ARRAY_SIZE;
     }
 ```
 
@@ -281,12 +283,144 @@ categories: 后端开发
     }
 
 ```
-## add
-## pop
+## add 
+```java
+    public boolean add(E e) {
+        return offer(e);
+    }
+```
 ## remove
+```java
+
+    /**
+     * Removes the ith element from queue.
+     * <p>
+     * Normally this method leaves the elements at up to i-1,
+     * inclusive, untouched.  Under these circumstances, it returns null.
+     * Occasionally, in order to maintain the heap invariant,
+     * it must swap a later element of the list with one earlier thani.
+     * Under these circumstances,
+     * this method returns the element that was previously at the end of the list and is now at some position before i.
+     * This fact is used by iterator.remove so as to avoid missing traversing elements.
+     */
+    @SuppressWarnings("unchecked")
+    private E removeAt(int i) {
+        assert i >= 0 && i < size;
+        // 修改次数+1
+        modCount++;
+        // 堆尾元素Index
+        int s = --size;
+        if (s == i) {
+            //如果删除的是堆尾元素，不需要进行siftUp
+            queue[i] = null;
+        } else {
+            //拿出堆尾元素
+            E moved = (E) queue[s];
+            queue[s] = null;
+            //将堆尾元素放到要删除的元素的位置，并执行siftDown
+            siftDown(i, moved);
+            //siftDown后，若元素没有改变，可能是因为要删除的结点和堆尾结点是跨子树，或者要删除的结点是叶子结点
+            if (queue[i] == moved) {
+                //如果删除的元素和堆尾元素不在一个子树，需要siftUp操作
+                siftUp(i, moved);
+                if (queue[i] != moved) {
+                    return moved;
+                }
+            }
+        }
+        return null;
+    }
+```
+>注意
+* 普通元素删除，将堆尾元素和要删除的位置替换，然后`siftDown`就可以；
+* 但当删除的元素和堆尾元素之间如果是`跨子树`的话，需要从删除位置执行`siftUp`操作；
+>示例
+```
+      0
+  4       1
+5   6   2   3
+```
+删除5，siftdown后
+```
+      0
+  4       1
+3   6   2   
+```
+此时还需要siftup一次，才能满足二叉堆的结构
+```
+      0
+  3       1
+4   6   2   
+```
+
+
+## poll
+```java
+    public E poll() {
+        if (size == 0)
+            return null;
+        //queue修改次数+1
+        modCount++;
+        //堆顶元素
+        E result = (E) queue[0];
+
+        //堆尾索引
+        int s = --size;
+        //堆尾元素
+        E x = (E) queue[s];
+        //置空堆尾元素
+        queue[s] = null;
+        if (s != 0) {
+            //堆尾元素拿出作为堆顶值后，从堆顶执行下沉
+            siftDown(0, x);
+        }
+        //返回堆顶元素
+        return result;
+    }
+```
 ## peek
+```java
+    public E peek() {
+        //返回堆顶元素
+        return (size == 0) ? null : (E) queue[0];
+    }
+```
+
+# 性能
+参考二叉堆性能
+* `O(log(n)) time` for the `enqueuing` and `dequeuing` methods (`offer, poll, remove() and add`);
+* `linear time` for the `remove(Object) and contains(Object)` methods;
+* `constant time` for the retrieval methods (`peek, element, and size`).
+# 线程安全性
+并发修改队列时非线程安全，线程安全版本使用`PriorityBlockingQueue`
+# 使用场景
+## PriorityQueue处理优先级场景
+如医院急诊科接诊要按病痛的优先级处理；构建好优先队列后逐个poll即可；
+## PriorityQueue求TopK大/小的元素
+>TODO：实现`TopKwithPriorityQueue`
+>求 Top k，更简单的方法可以直接用内置的`TreeMap`或者`TreeSet`，
+>TODO：TreeMap和TreeSet源码解析
+
+>Scanning through a large collection of statistics to report the top N items 
+>eg.N busiest network connections, N most valuable customers, N largest disk users...
+## PriorityQueue在Hadoop中的应用
+在 hadoop 中，排序是 MapReduce 的灵魂，MapTask 和 ReduceTask 均会对数据按 Key 排序，这个操作是 MR 框架的默认行为，不管你的业务逻辑上是否需要这一操作。
+* MapReduce 框架中，用到的排序主要有两种：`快速排序`和`基于堆实现的优先队列`。
+* Mapper 阶段： 从 map 输出到环形缓冲区的数据会被排序（这是 MR 框架中改良的快速排序），这个排序涉及`partition`和`key`，
+当缓冲区容量占用 80%，会`spill`数据到磁盘，生成`IFile`文件，
+`Map`结束后，会将`IFile`文件排序`合并`成一个大文件（基于堆实现的优先级队列），以供不同的`reduce`来拉取相应的数据。
+* Reducer 阶段： 
+从 Mapper 端取回的数据已是部分有序，Reduce Task 只需进行一次`归并排序`即可保证数据整体有序。
+为了提高效率，Hadoop 将`sort`阶段和`reduce`阶段`并行化`，
+在`sort`阶段，Reduce Task 为内存和磁盘中的文件建立了`小顶堆`，保存了指向该小顶堆根节点的迭代器，并不断的移动迭代器，
+以将 key 相同的数据`顺次`交给`reduce()`函数处理，期间移动迭代器的过程实际上就是不断调整小顶堆的过程（建堆→取堆顶元素→重新建堆→取堆顶元素...），这样，sort 和 reduce 可以并行进行。
+
+# 常见问题
+1. PriorityQueue的底层数组叫什么？原理是什么？如何实现排序的？
+2. 如何在N（N>>10000）个数据中找到最大的K个数？要求复杂度小于O(N*N)！
 
 # 参考
 * [jdk8.PriorityQueue](https://docs.oracle.com/javase/8/docs/api/java/util/PriorityQueue.html) 
 * [堆排序](https://juejin.im/post/5cba5cb9518825327e23f078)
 * [java集合之PriorityQueue源码分析](https://juejin.im/post/5cba5cb9518825327e23f078)
+* [priorityQueue元素删除问题](https://stackoverflow.com/questions/38696556/in-java-priority-queue-implementation-remove-at-method-why-it-does-a-sift-up-af)
