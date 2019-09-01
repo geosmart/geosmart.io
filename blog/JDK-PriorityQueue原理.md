@@ -34,10 +34,13 @@ categories: 后端开发
 >* 优先队列跟普通的队列不一样，普通队列遵循FIFO规则出队入队，而优先队列每次都是优先级最高出队。
 >* 优先队列内部维护着一个堆，每次取数据的时候都从堆顶取，这是优先队列的基本工作原理。
 * jdk的优先队列使用PriorityQueue这个类，使用者可以自己定义优先级规则。
+
 >PriorityQueue的类关系
+
 ![priority_queue_hier](img/priority_queue_hier.png)
 
 >PriorityQueue的类成员
+
 ![priority_queue_class](img/priority_queue_class1.png)
 
 # 结构
