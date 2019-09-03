@@ -422,18 +422,12 @@ categories: 后端开发
             if (topKQueue.size() < k) {
                 //一直加到K
                 topKQueue.add(o);
-                System.out.println(String.format("add %s", o));
             } else {
                 Object min = topKQueue.peek();
                 if (o > (int) min) {
                     //最小堆大小超过K且当前元素比堆顶大时，移除堆顶元素，并加入新元素
-                    HeapPrinter.dump(topKQueue.toArray());
                     topKQueue.poll();
                     topKQueue.add(o);
-                    System.out.println(String.format("poll %s, add %s", min, o));
-                    HeapPrinter.dump(topKQueue.toArray());
-                } else {
-                    System.out.println(String.format("skip %s", o));
                 }
             }
         }
