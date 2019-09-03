@@ -400,7 +400,47 @@ categories: 后端开发
 ## PriorityQueue处理优先级场景
 如医院急诊科接诊要按病痛的优先级处理；构建好优先队列后逐个poll即可；
 ## PriorityQueue求TopK大/小的元素
->TODO：实现`TopKwithPriorityQueue`
+使用`小顶堆`来实现TopK问题求解：维护一个大小为K的最大堆，那么在堆中的数都是TopK。
+* 处理过程：在添加一个元素之后，如果小顶堆的大小大于 K，那么需要将小顶堆的堆顶元素去除
+* 时间复杂度：O(Nlog(K)) 
+* 空间复杂度： O(K)
+* 特别适合处理`海量数据`
+
+在海量数据场景下，单机通常不能存放下所有数据。
+* 拆分：可以按照`哈希取模`方式拆分到多台机器上；在每个机器上维护`最大堆`；
+* 整合：将每台机器得到的最大堆`合并`成最终的最大堆。
+
+```java
+    @Test
+    public void test_topK() {
+        int k = 4;
+        List<Integer> array = Arrays.asList(11, 0, 9, 8, 6, 1, 4, 5, 3, 2, 7);
+
+        PriorityQueue topKQueue = new PriorityQueue();
+        for (int i = 0; i < array.size(); i++) {
+            int o = array.get(i);
+            if (topKQueue.size() < k) {
+                //一直加到K
+                topKQueue.add(o);
+                System.out.println(String.format("add %s", o));
+            } else {
+                Object min = topKQueue.peek();
+                if (o > (int) min) {
+                    //最小堆大小超过K且当前元素比堆顶大时，移除堆顶元素，并加入新元素
+                    HeapPrinter.dump(topKQueue.toArray());
+                    topKQueue.poll();
+                    topKQueue.add(o);
+                    System.out.println(String.format("poll %s, add %s", min, o));
+                    HeapPrinter.dump(topKQueue.toArray());
+                } else {
+                    System.out.println(String.format("skip %s", o));
+                }
+            }
+        }
+    }
+```
+>注意：可以skip比堆顶还小的元素
+
 >求 Top k，更简单的方法可以直接用内置的`TreeMap`或者`TreeSet`，
 >TODO：TreeMap和TreeSet源码解析
 
