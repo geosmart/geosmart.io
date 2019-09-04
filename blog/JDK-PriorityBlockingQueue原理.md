@@ -208,9 +208,9 @@ This avoids repeated postponement of waiting consumers and consequent element bu
         if (newArray == null) {
             Thread.yield();
         }
-        //4. 在扩容时，若其他线程在执行了出/入队操作，直接copy会导致copy的不是最新的数据，所以此时要加锁后再copy
+        //5. 在扩容时，若其他线程在执行出/入队操作，直接copy会导致copy的不是最新的数据，所以此时要加锁后再copy
         lock.lock();
-        //5. 加锁时，如果其他线程执行出了/如队操作，队列发生了变化（queue != array），当前扩容操作要取消；如果成功加锁且队列没发生改变，则可执行扩容操作
+        //6. 加锁时，如果其他线程执行出/入队操作，队列发生了变化（queue!= array），当前扩容操作要取消；如果成功加锁且队列没发生改变，则可执行扩容操作
         if (newArray != null && queue == array) {
             queue = newArray;
             System.arraycopy(array, 0, newArray, 0, oldCap);
