@@ -289,21 +289,199 @@ This avoids repeated postponement of waiting consumers and consequent element bu
             return result;
         }
     }
+    
+    /**
+     * Inserts item x at position k, maintaining heap invariant by demoting x down the tree repeatedly
+     * until it is less than or equal to its children or is a leaf.
+     *
+     * @param k     the position to fill
+     * @param x     the item to insert
+     * @param array the heap array
+     * @param n     heap size
+     */
+    private static <T> void siftDownComparable(int k, T x, Object[] array, int n) {
+        if (n > 0) {
+            //拿出父节点值
+            Comparable<? super T> key = (Comparable<? super T>) x;
+            //存在叶子节点时 loop while a non-leaf
+            int half = n >>> 1;
+            while (k < half) {
+                // assume left child is least
+                int child = (k << 1) + 1;
+                //最小值
+                Object c = array[child];
+                int right = child + 1;
+                //存在right且right比left大
+                if (right < n &&
+                        ((Comparable<? super T>) c).compareTo((T) array[right]) > 0) {
+                    c = array[child = right];
+                }
+                //父节点比最小值小，不需要交换，终止loop
+                if (key.compareTo((T) c) <= 0) {
+                    break;
+                }
+                //父节点值以最小值替换
+                array[k] = c;
+                //父节点移到最小值位置
+                k = child;
+            }
+            //父节点值，最终赋给交换n轮后的叶子节点
+            array[k] = key;
+        }
+    }
 ```
 
->关于lockInterruptibly
+>关于ReentrantLock.lockInterruptibly
+1. 获取并持有锁直到当前线程未被中断。
+2. 获取该锁并立即返回（如果该锁没有被另一个线程持有），将锁的保持计数设置为 1。
+3. 如果该锁已被另一个线程持有，则当前线程不可被调度（即阻塞状态，CPU不会给该线程分配时间片）直到
+ * 当前线程获取到该锁；
+ * 其他线程中断当前线程；
+5. 如果该锁被当前线程持有，则将锁的持有计数设置为1，
+6. 如果当前线程在进入此方法时已经设置了该线程的中断状态；或者在等待获取锁的同时被中断。则抛出`InterruptedException`异常，同时清除当前线程的中断状态；
+
+7. 在此实现中，因为`lockInterruptibly`方法是一个`显式中断`点，所以要`优先响应中断`，而不是响应锁的普通获取或重入获取；
+>注意程序要响应中断还是比较expensive的，有时候甚至imposibble，所以如果线程支持中断，一定要声明清楚！
+[jdk8-lock-lockInterruptibly](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/Lock.html#lockInterruptibly--)
+
 >关于Condition.await
+await方法的调用将导致当前线程等待直到signalled或interrupted调用时才恢复；
+condition关联的lock会被原子释放，当前线程将不可调度直到以下4种情况触发：
+1. 其他线程调用当前condition的signal()方法，并且当前线程正好被唤醒；
+2. 其他线程调用当前condition的signalAll()方法；
+3. 其他线程终止当前线程， and interruption of thread suspension is supported; 
+4. `spurious wakeup`发生；
+在所有情况中，在当前method能返回前，当前线程必须重新获取condition关联的锁；
+在线程返回时await会保证一直持有condition关联的锁；
 
-
+>todo 待搞清楚`AQS`里面的Lock
 ## remove
-
-## peak
-
+加锁后，删除节点
+```java
+    @Override
+    public boolean remove(Object o) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            int i = indexOf(o);
+            if (i == -1) {
+                return false;
+            }
+            removeAt(i);
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    private void removeAt(int i) {
+        Object[] array = queue;
+        int n = size - 1;
+        // removed last element
+        if (n == i) {
+            array[i] = null;
+        } else {
+            E moved = (E) array[n];
+            array[n] = null;
+            Comparator<? super E> cmp = comparator;
+            if (cmp == null) {
+                //从删除节点开始下沉
+                siftDownComparable(i, moved, array, n);
+            } else {
+                siftDownUsingComparator(i, moved, array, n, cmp);
+            }
+            //siftDown后，若元素没有改变，可能是因为要删除的结点和堆尾结点是跨子树，或者要删除的结点是叶子结点
+            if (array[i] == moved) {
+                if (cmp == null) {
+                    siftUpComparable(i, moved, array);
+                } else {
+                    siftUpUsingComparator(i, moved, array, cmp);
+                }
+            }
+        }
+        size = n;
+    }
+    
+```
+>从当前节点上浮到根节点
+```java
+    private static <T> void siftUpComparable(int k, T x, Object[] array) {
+        Comparable<? super T> key = (Comparable<? super T>) x;
+        while (k > 0) {
+            int parent = (k - 1) >>> 1;
+            Object e = array[parent];
+            if (key.compareTo((T) e) >= 0) {
+                break;
+            }
+            array[k] = e;
+            k = parent;
+        }
+        array[k] = key;
+    }
+```
+## peek
+加锁后，返回堆顶节点
+```java
+    @Override
+    public E peek() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return (size == 0) ? null : (E) queue[0];
+        } finally {
+            lock.unlock();
+        }
+    }
+```
 ## size
-
+加锁后，返回堆大小
+```java
+    @Override
+    public int size() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return size;
+        } finally {
+            lock.unlock();
+        }
+    }
+```
 ## contains
+加锁后，返回堆大小
+```java
+    @Override
+    public boolean contains(Object o) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return indexOf(o) != -1;
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    private int indexOf(Object o) {
+        if (o != null) {
+            //todo 为什么不直接用queue?
+            Object[] array = queue;
+            int n = size;
+            for (int i = 0; i < n; i++) {
+                if (o.equals(array[i])) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+```
+# 性能
+* O(1)：peek
+* O(n)：heapify
+* O(nlog(n)):put,remove
 
-# 性能 
+>todo 复杂度计算方法
+
 # 线程安全性 
 PriorityBlockingQueue中的锁
 * `ReentrantLock`：重入锁，对queue的所有public操作加锁；
@@ -352,11 +530,15 @@ PriorityBlockingQueue中的锁
     }
 ```
 # 使用场景 
+
 # 常见问题 
-## PriorityBlockingQueue中的allocationSpinLock起什么作用？
+## PriorityBlockingQueue中用到了那些锁？
+* condition的作用
+* allocationSpinLock起什么作用？
 tryGrow时
+
 ## PriorityBlockingQueue中的Blocking体现在哪些操作？
-add/offer时
+所有public方法
 
 # 参考
 * [jdk8.PriorityBlockingQueue](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/PriorityBlockingQueue.html) 

@@ -72,8 +72,6 @@ categories: 后端开发
 * 如果是由`SortedSet`,`PriorityQueue`这种有序的结构构建优先队列，直接`Arrays.copyOf`把数据复制到queue数组中；
 * 如果是由无序数组构建优先队列，需要把数据复制到queue数组中后，执行`构建堆(heapify)`操作；
 
-> TODO 
-
 # 源码解析
 ## heapify-构建堆
 ```java
