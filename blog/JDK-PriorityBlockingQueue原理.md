@@ -59,7 +59,7 @@ For example, here is a class that applies `first-in-first-out` tie-breaking to c
 ![priority_queue_class](img/priority_blocking_queue_class.png)
 
 # 结构
-参考[PriorityQueue]()
+二叉堆实现，参考[PriorityQueue](https://github.com/geosmart/geosmart.io/blob/master/blog/JDK-PriorityQueue%E5%8E%9F%E7%90%86.md)
 
 # 参数
 * `int.initialCapacity`：初始化容量，默认为`11`；
@@ -88,7 +88,7 @@ This avoids repeated postponement of waiting consumers and consequent element bu
 > TODO 搞清楚spinLock间隙锁
 
 ## heapify
-参考[PriorityQueue]()
+参考[PriorityQueue](https://github.com/geosmart/geosmart.io/blob/master/blog/JDK-PriorityQueue%E5%8E%9F%E7%90%86.md)
 从最后一个父节点开始siftdown，直到根节点
 
 ## add/put/offer
@@ -204,7 +204,7 @@ This avoids repeated postponement of waiting consumers and consequent element bu
             }
         }
         // back off if another thread is allocating
-        //4. CAS失败的线程调用Thread.yield()让出CPU时间，目的是让让CAS成功的线程扩容后优先调用lock.lock重新获取锁，但是这得不到一定的保证，有可能调用Thread.yield()的线程先获取了锁。
+        //4. CAS失败的线程调用Thread.yield()让出CPU时间，目的是让CAS成功的线程扩容后优先调用lock.lock重新获取锁，但是这得不到一定的保证，有可能调用Thread.yield()的线程先获取了锁。
         if (newArray == null) {
             Thread.yield();
         }
@@ -219,6 +219,81 @@ This avoids repeated postponement of waiting consumers and consequent element bu
     }
 ```
 ## take/poll
+>take阻塞出队
+```java
+@Override
+    public E take() throws InterruptedException {
+        final ReentrantLock lock = this.lock;
+        //上锁，可中断
+        lock.lockInterruptibly();
+        E result;
+        try {
+            //阻塞直到队列返回结果
+            while ((result = dequeue()) == null) {
+                //阻塞等待恢复信号
+                notEmpty.await();
+            }
+        } finally {
+            //解锁
+            lock.unlock();
+        }
+        return result;
+    }
+```
+
+>poll阻塞出队（设置超时时间）
+```java
+    @Override
+    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        long nanos = unit.toNanos(timeout);
+        final ReentrantLock lock = this.lock;
+        lock.lockInterruptibly();
+        E result;
+        try {
+            //阻塞直到队列返回结果，或者等待超时
+            while ((result = dequeue()) == null && nanos > 0) {
+                //阻塞等待恢复信号（超时时间）
+                nanos = notEmpty.awaitNanos(nanos);
+            }
+        } finally {
+            lock.unlock();
+        }
+        return result;
+    }
+```
+>dequeue出队操作
+```java
+    /**
+     * Mechanics for poll().  Call only while holding lock.
+     */
+    private E dequeue() {
+        int n = size - 1;
+        //没元素返回空
+        if (n < 0) {
+            return null;
+        } else {
+            //拿出队头元素，用于返回
+            Object[] array = queue;
+            E result = (E) array[0];
+
+            //将队尾元素放到队头，并从队头开始执行siftDown
+            E x = (E) array[n];
+            array[n] = null;
+            Comparator<? super E> cmp = comparator;
+            if (cmp == null) {
+                siftDownComparable(0, x, array, n);
+            } else {
+                siftDownUsingComparator(0, x, array, n, cmp);
+            }
+            size = n;
+            return result;
+        }
+    }
+```
+
+>关于lockInterruptibly
+>关于Condition.await
+
 
 ## remove
 
