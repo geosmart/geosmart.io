@@ -48,8 +48,6 @@ For example, here is a class that applies `first-in-first-out` tie-breaking to c
 
 <!-- more --> 
 # 概念
-
-
 >PriorityQueue的类关系
 
 ![priority_queue_hier](img/priority_blocking_queue_hier.png)
@@ -99,7 +97,6 @@ This avoids repeated postponement of waiting consumers and consequent element bu
     public boolean add(E e) {
         return offer(e);
     }
-
 
     /**
      * Inserts the specified element into this priority queue.
@@ -486,7 +483,7 @@ condition关联的lock会被原子释放，当前线程将不可调度直到以�
 PriorityBlockingQueue中的锁
 * `ReentrantLock`：重入锁，对queue的所有public操作加锁；
 * `Condition`：竞态条件，如果队列为空，take/poll时`await`阻塞，offer时`signal`取消阻塞；
-* `Unsafe`：扩容时，以compareAndSwapInt执行CAS操作
+* `Unsafe`：扩容时，以`compareAndSwapInt`执行CAS操作
 
 >`关于UnSafe`
   * `Unsafe`是位于sun.misc包下的一个类，主要提供一些用于执行低级别、不安全操作的方法，如直接`访问系统内存资源`、`自主管理内存资源`等，这些方法在提升Java运行效率、增强Java语言底层资源操作能力方面起到了很大的作用。
@@ -514,7 +511,6 @@ PriorityBlockingQueue中的锁
      */
     private transient volatile int allocationSpinLock;
 
-    
     // Unsafe mechanics
     private static final sun.misc.Unsafe UNSAFE;
     private static final long allocationSpinLockOffset;
@@ -529,16 +525,12 @@ PriorityBlockingQueue中的锁
         }
     }
 ```
-# 使用场景 
+# 使用场景
+参考[PriorityQueue](https://github.com/geosmart/geosmart.io/blob/master/blog/JDK-PriorityQueue原理.md)
 
 # 常见问题 
 ## PriorityBlockingQueue中用到了那些锁？
-* condition的作用
-* allocationSpinLock起什么作用？
-tryGrow时
-
 ## PriorityBlockingQueue中的Blocking体现在哪些操作？
-所有public方法
 
 # 参考
 * [jdk8.PriorityBlockingQueue](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/PriorityBlockingQueue.html) 
