@@ -149,12 +149,12 @@ This avoids repeated postponement of waiting consumers and consequent element bu
 >siftUp参考[JDK-PriorityQueue原理](https://github.com/geosmart/geosmart.io/issues/12)
 
 >tryGrow扩容要点
-* lock是全局锁，如果在扩容时加锁会导致其他线程出/入队时都会阻塞；
-* 而队列很大时，扩容操作（arraycopy）是比较费时的，如果此时占用锁，那么其他线程在这个时候是不能进行出/入队操作，这样会`降低并发处理能力`；
+* lock是全局锁，如果在扩容时加锁会导致其他线程出队时会阻塞；
+* 而队列很大时，扩容操作（arraycopy）是比较费时的，如果此时占用锁，那么其他线程在这个时候是不能进行出队操作，这样会`降低并发处理能力`；
 * 所以为了更好的性能，扩容时先释放锁；
 * 但是释放锁后，会导致多个线程同时进行扩容，此时用spinLock以`CAS`控制只有1个线程可以执行扩容，其他CAS失败的则跳过（newArray=null）；
 * CAS失败的线程调用`Thread.yield()`让出CPU时间，目的是让让CAS成功的线程扩容后优先调用lock.lock重新获取锁，但是这得不到一定的保证，有可能调用Thread.yield()的线程先获取了锁；
-* 在扩容时，若其他线程在执行了出/入队操作，直接cop扩容y会导致copy的不是最新的数据，所以此时要加锁后再copy；
+* 在扩容时，若其他线程在执行了出队操作，直接cop扩容会导致copy的不是最新的数据，所以此时要加锁后再copy；
 * 在加锁时，如果其他线程执行出了/如队操作，队列发生了变化（queue != array），当前扩容操作要取消；如果成功加锁且队列没发生改变，则可执行扩容操作；
 >关键点：解全局锁，CAS乐观锁申请数组大小，扩容前恢复加锁
 
@@ -351,7 +351,7 @@ condition关联的lock会被原子释放，当前线程将不可调度直到以�
 在所有情况中，在当前method能返回前，当前线程必须重新获取condition关联的锁；
 在线程返回时await会保证一直持有condition关联的锁；
 
->todo 待搞清楚`AQS`里面的Lock
+>todo 后面要整理一篇专门搞清楚`AQS`里面的Lock
 ## remove
 加锁后，删除节点
 ```java
