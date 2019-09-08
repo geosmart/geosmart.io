@@ -8,6 +8,8 @@ tags: [JDK]
 categories: 后端开发
 
 ---
+>研究了[PriorityQueue原理](https://github.com/geosmart/geosmart.io/issues/12)，知道JDK源码怎么实现的优先队列，这次是高清`PriorityBlockingQueue`阻塞优先队列如何实现
+>里面关于`AQS`,`CAS`的理论没有深入，后续专门研究。
 
 > 从PriorityBlockingQueue的`概念，结构，参数，源码解析（offer,poll,remove,add,grow），性能，线程安全性，使用场景，常见问题`8个方面进行分析。
 
@@ -81,9 +83,11 @@ For example, here is a class that applies `first-in-first-out` tie-breaking to c
     }
 ``` 
 # 源码解析 
-The implementation uses an `array-based binary heap`, with public operations protected with a `single lock`. However, allocation during resizing uses a simple `spinlock` (used only while not holding main lock) in order to allow takes to operate concurrently with allocation.  
-This avoids repeated postponement of waiting consumers and consequent element build-up. The need to back away from lock during allocation makes it impossible to simply wrap delegated `java.util.PriorityQueue` operations within a lock, as was done in a previous version of this class. To maintain interoperability, a plain PriorityQueue is still used during serialization, which maintains compatibility at the expense of transiently doubling overhead.
-> TODO 搞清楚spinLock间隙锁
+>*  The implementation uses an `array-based binary heap`, with public operations protected with a `single lock`. 
+>* However, allocation during resizing uses a simple `spinlock` (used only while not holding main lock) in order to allow takes to operate concurrently with allocation.  
+This avoids repeated postponement of waiting consumers and consequent element build-up. 
+>* The need to back away from lock during allocation makes it impossible to simply wrap delegated `java.util.PriorityQueue` operations within a lock, as was done in a previous version of this class. 
+>* To maintain interoperability, a plain PriorityQueue is still used during serialization, which maintains compatibility at the expense of transiently doubling overhead.
 
 ## heapify
 参考[PriorityQueue](https://github.com/geosmart/geosmart.io/blob/master/blog/JDK-PriorityQueue%E5%8E%9F%E7%90%86.md)
@@ -530,7 +534,15 @@ PriorityBlockingQueue中的锁
 
 # 常见问题 
 ## PriorityBlockingQueue中用到了那些锁？
+* CAS
+* ReentranLock
+
 ## PriorityBlockingQueue中的Blocking体现在哪些操作？
+* read：take
+* write：grow，offer
 
 # 参考
 * [jdk8.PriorityBlockingQueue](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/PriorityBlockingQueue.html) 
+* [JDK-PriorityQueue原理](https://github.com/geosmart/geosmart.io/issues/12) 
+* [二叉堆实现原理](https://github.com/geosmart/geosmart.io/issues/11) 
+
