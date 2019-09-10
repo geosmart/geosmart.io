@@ -12,11 +12,13 @@ rabbitmq系统架构和常规使用模式
 
 <!-- more --> 
 # RabbitMQ的物理架构
+* 架构1：普通架构
 ![rabbitmq物理架构2](img/rabbitmq_physical2.png)
->First node is the master of cluster – two other nodes will join him. 
->We use container management to enable an UI administration console for each node. 
->Every node has default connection and UI management ports exposed. 
->Important thing is to link rabbit2 and rabbit3 constainers to rabbit1, which is necessary while joining to cluster mastering by rabbit1.
+>First node is the master of cluster – two other nodes will join him.   
+>We use container management to enable an UI administration console for each node.   
+>Every node has default connection and UI management ports exposed.   
+>Important thing is to link rabbit2 and rabbit3 constainers to rabbit1, which is necessary while joining to cluster mastering by rabbit1.  
+
 ```bash
 rabbit1 --name rabbit1 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30000:5672 -p 30001:15672 rabbitmq:management
 
@@ -24,6 +26,13 @@ rabbit2 --name rabbit2 --link rabbit1:rabbit1 -e RABBITMQ_ERLANG_COOKIE='rabbitc
 
 rabbit3 --name rabbit3 --link rabbit1:rabbit1 -e RABBITMQ_ERLANG_COOKIE='rabbitcluster' -p 30004:5672 -p 30005:15672 rabbitmq:management
 ```
+
+* 架构2：加入集群权限管理和节点自注册
+![rabbitmq物理架构1](img/rabbitmq_physical1.png)
+>We use Vault as a credentials manager when applications try to authenticate against RabbitMQ node or user tries to login to RabbitMQ web admin console.   
+>Each RabbitMQ node registers itself after startup in Consul and retrieves list of nodes running inside a cluster.   
+>Vault is integrated with RabbitMQ using dedicated secrets engine.   
+
 ## RabbitMQ的结点类型
 rabbitmq节点类型有内存节点（ram node）和磁盘节点(disk node)。
 * `RAM node`:内存节点将所有的队列、交换机、绑定、用户、权限和vhost的元数据定义存储在内存中，好处是可以使得像交换机和队列声明等操作更加的快速。
@@ -34,10 +43,6 @@ RabbitMQ要求在集群中至少有一个磁盘节点，所有其他节点可以
 >问题说明：如果集群中唯一的一个磁盘节点崩溃的话，集群仍然可以保持运行，但是无法进行其他操作（增删改查），直到节点恢复。  
 >解决方案：设置两个磁盘节点，至少有一个是可用的，可以保存元数据的更改。
 
-![rabbitmq物理架构1](img/rabbitmq_physical1.png)
->We use Vault as a credentials manager when applications try to authenticate against RabbitMQ node or user tries to login to RabbitMQ web admin console. 
->Each RabbitMQ node registers itself after startup in Consul and retrieves list of nodes running inside a cluster. 
->Vault is integrated with RabbitMQ using dedicated secrets engine. 
 ## RabbitMQ的集群模式
 RabbitMQ的Cluster集群模式分为2种，普通模式和镜像模式。
 ### 普通模式(default)
