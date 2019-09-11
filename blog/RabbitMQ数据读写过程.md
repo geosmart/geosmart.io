@@ -39,6 +39,7 @@ RabbitMQ`如何存储`消息，RabbitMQ如何`接收消息`和`投递消息`？
 
 ## RabbitMQ中队列的存储状态
 BackingQueue由Q1,Q2,Delta,Q3,Q4五个子队列构成，在BackingQueue中，消息的生命周期有4个状态：
+
 | queue | state\store | message itself | message index(message position) |
 | ----- | ----------- | -------------- | ------------------------------- |
 | q1,q4 | alpha       | RAM            | RAM                             |
@@ -158,7 +159,7 @@ total 24K
 * `publish`消息时写入内容，`ack`消息时删除内容（更新该文件的有用数据大小），当一个文件的有用数据等于0时，删除该文件。
 
 # RabbitMQ的消息读写过程
-![rabbitMQ存储](img/rabbitMQ_存储.jpg)
+![rabbitMQ存储](img/rabbitmq_存储.jpg)
 * rabbit_channel进程确定了消息将要投递的目标队列，
 * rabbit_amqqueue_process是队列进程，每个队列都有一个对应的进程，实际上rabbit_amqqueue_process进程只是提供了逻辑上对队列的相关操作，他的真正操作是通过调用指定的backing_queue模块提供的相关接口实现的，默认情况该backing_queue的实现模块为rabbit_variable_queue。
 ## 消息publish
@@ -171,8 +172,8 @@ rabbit_amqqueue_process对消息的主要处理逻辑位于`deliver_or_enqueue`�
 2. 然后判断队列中是否有消费者正在等待，如果有则直接调用`backing_queue`的接口给客户端发送消息。
 3. 如果队列上没有消费者，根据当前相关设置判断消息是否需要`丢弃`，不需要丢弃的情况下调用backing_queue的接口将消息入队。
 
-![rabbitMQ_publish](img/rabbitMQ_publish.jpg)
-![rabbitMQ_backing_queue](img/rabbitMQ_backing_queue.jpg)
+![rabbitMQ_publish](img/rabbitmq_publish.jpg)
+![rabbitMQ_backing_queue](img/rabbitmq_backing_queue.jpg)
 
 * 如果调用到该方法的BQ:publish则说明当前队列没有消费者正在等待，消息将进入到队列。backing_queue实现了消息的存储，他会尽力将durable=true的消息做持久化存储。
 * 初始默认情况下，非持久化消息直接进入内存队列，此时效率最高，当内存占用逐渐达到一个阈值时，消息和消息索引逐渐往磁盘中移动，随着消费者的不断消费，内存占用的减少，消息逐渐又从磁盘中被转到内存队列中。
@@ -181,7 +182,7 @@ rabbit_amqqueue_process对消息的主要处理逻辑位于`deliver_or_enqueue`�
 * 内存中的消息数量（RamMsgCount）及内存中的等待ack的消息数量（RamAckIndex）的和大于允许的内存消息数量（TargetRamCount）时，多余数量的消息内容会被写到磁盘中.
 
 ## 消息consuming
-![rabbitMQ_consuming](img/rabbitMQ_consuming.jpg)
+![rabbitMQ_consuming](img/rabbitmq_consuming.jpg)
 >获取消息
 * 尝试从q4队列中获取一个消息，如果成功，则返回获取到的消息，如果失败，则尝试通过试用fetch_from_q3/1从q3队列获取消息，成功则返回，如果为空则返回空；
 * 注意fetch_from_q3从Q3获取消息，如果Q3为空，则说明整个队列都是空的，无消息，消费者等待即可。
