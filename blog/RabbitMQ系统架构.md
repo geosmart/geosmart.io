@@ -63,7 +63,7 @@ RabbitMQ的Cluster集群模式分为2种，普通模式和镜像模式。
 >一般互联网大厂都会构建这种镜像集群模式;
 >实际生产环境：一般客户端是通过HAProxy这类`负载均衡`对MQ进行访问；
 
-## 双活模式
+### 双活模式
 * 实现异地集群的都是采用这种`双活`或者`多活`模型来实现的。这种模式需要依赖 rabbitMQ 的`federation`插件，可以实现持续的，可靠的 AMQP 数据通信，多活模式在实际配置与应用非常的简单。    
 * rabbitMQ 部署架构采用双中心模式(多中心)，那么在两套(或多套)数据中心各部署一套 rabbitMQ 集群，各中心的rabbitMQ 服务除了需要为业务提供正常的消息服务外，中心之间还需要实现部分队列消息共享。
  
@@ -79,6 +79,7 @@ RabbitMQ的Cluster集群模式分为2种，普通模式和镜像模式。
 >`AMQP`，即`Advanced Message Queuing Protocol`,一个提供统一消息服务的应用层标准高级消息队列协议,是应用层协议的一个开放标准,为面向消息的中间件设计。
 
 >基于此协议的`客户端`与`消息中间件`可传递消息，并不受客户端/中间件不同产品，不同的开发语言等条件的限制。Erla
+
 
 ## RabbitMQ消息模型的核心理念
 * 发布者（producer）不会直接发送任何消息给队列。
@@ -190,4 +191,6 @@ channel.basicConsume("my-queue", false, consumer);
 * [Using RabbitMQ in Cluster](https://dzone.com/articles/rabbitmq-in-cluster)
 * [RabbitMQ Cluster with Consul and Vault](https://piotrminkowski.wordpress.com/2018/12/27/rabbitmq-cluster-with-consul-and-vault/)
 * [RabbitMQ博客列表](https://www.jianshu.com/p/cd81afa8ade1)
-
+* [rabbitmq-诞生于金融行业的消息队列](http://sadwxqezc.github.io/HuangHuanBlog/middleware/2018/11/25/RabbitMq.html)
+* [rabbitmq快速手册](https://geewu.gitbooks.io/rabbitmq-quick/)
+* [RabbitMQ的4种集群架构--主备、远程、镜像模式、多活模式](https://kknews.cc/code/423365x.html)
