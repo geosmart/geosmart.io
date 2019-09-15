@@ -8,7 +8,7 @@ tags: [中间件]
 categories: 大数据
 
 ---
-rabbitmq是基于amqp协议的一种实现
+rabbitmq是基于amqp协议的一种实现，包含`amqp的三层协议`
 
 <!-- more --> 
   

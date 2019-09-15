@@ -80,18 +80,18 @@ RabbitMQ的Cluster集群模式分为2种，普通模式和镜像模式。
 
 >基于此协议的`客户端`与`消息中间件`可传递消息，并不受客户端/中间件不同产品，不同的开发语言等条件的限制。Erla
 
-
-## RabbitMQ消息模型的核心理念
-* 发布者（producer）不会直接发送任何消息给队列。
-* 事实上，发布者（producer）甚至不知道消息是否已经被投递到队列。
-* 发布者（producer）只需要把消息发送给一个交换机（exchange）。
-* 交换机非常简单，它一边从发布者方接收消息，一边把消息推送到队列。交换机必须知道如何处理它接收到的消息，是应该推送到指定的队列还是是多个队列，或者是直接忽略消息。
-
-这些规则是通过交换机类型（exchange type）来定义的。
-
-![rabbitmq_exchange](img/rabbitmq_exchange.png)
+# RabbitMQ消息模型的核心理念
+* producer：消息生产者，不会直接发送任何消息给队列，事实上，发布者（producer）甚至不知道消息是否已经被投递到队列，发布者（producer）只需要把消息发送给一个交换机（exchange）
+* consumer：消息消费者
+* virtual host：虚拟主机，在RabbitMQ中，用户只能在虚拟主机的层面上进行一些权限设置，比如我可以访问哪些队列，我可以处理哪些请求等等；
+* broker：消息转发者，也就是我们RabbitMQ服务端充当的功能了，那么消息是按照什么规则进行转发的呢？需要用到下面几个概念；
+* exchange：交换机，一边从发布者方接收消息，一边把消息推送到队列。交换机必须知道如何处理它接收到的消息，是应该推送到指定的队列还是是多个队列，或者是直接忽略消息，这些规则是通过交换机类型（exchange type）来定义的；
+* routing key(路由键)，每个消息都有这个键，我们也可以自己设定，其实就是一字符串；
+* queue：消息队列，用于存放消息，他接收exchange路由过来的消息，我们可以对队列内容进行持久化操作，
+* binding key(绑定键)：queue到底接收哪个exchange路由的消息？这个时候就要用到binding key(绑定键)了，绑定键会将队列和exchange进行绑定，至于绑定方式，RabbitMQ提供了多种方式（direct,topic,fanout,header）；
 
 # 交换机（Exchange）
+![rabbitmq_exchange](img/rabbitmq_exchange.png)
 ## 交换机的属性
 除交换机类型外，在声明交换机时还可以附带许多其他的属性，其中最重要的几个分别是：
 * Name
@@ -147,7 +147,7 @@ channel.basic_publish(exchange='',
 >The default exchange is a direct exchange with no name (empty string) pre-declared by the broker. It has one special property that makes it very useful for simple applications: 
 >every queue that is created is automatically bound to it with a routing key which is the same as the queue name.
 
-## 路由(Routing)
+# 路由(Routing)
 * 功能：用于订阅消息的一个字集
 * 应用场景：日志消息系统中，我们只需要把严重的错误日志信息写入日志文件（存储到磁盘），但同时仍然把所有的日志信息输出到控制台中；发送消息到一个exchange(direct类型)，把日志级别作为RoutingKey。这样接收日志的脚本(consumer)就可以根据logLevel来选择它想要处理的日志。
 
@@ -168,7 +168,7 @@ AMQP中的队列（queue）跟其他消息队列或任务队列中的队列是�
 * 如果声明的队列已经存在，并且属性完全相同，那么此次声明不会对原有队列产生任何影响。
 * 如果声明中的属性与已存在队列的属性有差异，那么一个错误代码为406的通道级异常就会被抛出。
 
-## RabbitMQ实现的RPC
+# RabbitMQ实现的RPC
 ![rabbitmq_rpc](img/rabbitmq_rpc.png)
 
 RPC工作流程:
